@@ -1,5 +1,6 @@
 .env
 .python/
+.tools/
 .uv-cache/
 .venv/
 __pycache__/
@@ -8,4 +9,5 @@ __pycache__/
 .ruff_cache/
 htmlcov/
 .coverage
-
+supabase/.branches/
+supabase/.temp/
