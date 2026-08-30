@@ -14,6 +14,7 @@ ChatGPT 등 MCP 호스트에서 AI GM과 함께 플레이하는 TRPG 서버입�
 게임 규칙은 [`docs/game-rules.md`](docs/game-rules.md)를 참고하세요.
 Supabase 환경 구성은 [`docs/supabase-setup.md`](docs/supabase-setup.md)를 참고하세요.
 데이터 관계와 불변조건은 [`docs/database-schema.md`](docs/database-schema.md)를 참고하세요.
+데이터 접근 권한과 RLS 경계는 [`docs/database-security.md`](docs/database-security.md)를 참고하세요.
 
 ## 로컬 실행
 

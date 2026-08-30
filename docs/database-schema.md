@@ -58,9 +58,9 @@ characters
 
 ## Security boundary
 
-This migration establishes relational integrity but intentionally does not enable RLS. Stage 4
-will enable RLS on every user-data table and add authenticated access policies. Until then, the
-local schema is for development only and must not be exposed as a production Data API.
+Stage 4 enables RLS on every application table and combines row policies with explicit table and
+column grants. See [`database-security.md`](database-security.md) for the access matrix, trusted
+server boundary and attack-test coverage.
 
 ## Verification
 
@@ -71,4 +71,3 @@ supabase db lint --local --level warning
 ```
 
 The pgTAP suite runs inside a transaction and rolls back all fixture data.
-
