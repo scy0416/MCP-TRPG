@@ -1,3 +1,4 @@
--- Stage 2 intentionally contains no application data.
--- Deterministic development fixtures will be added with the Stage 3 schema.
-
+insert into private.mcp_auth_config (resource_uri)
+values ('http://127.0.0.1:8000/mcp')
+on conflict (singleton) do update
+set resource_uri = excluded.resource_uri;

@@ -23,6 +23,7 @@ def test_remote_environment_requires_https(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("SUPABASE_URL", "http://example.supabase.co")
     monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "test-publishable-key")
     monkeypatch.setenv("SUPABASE_PROJECT_REF", "test-project-ref")
+    monkeypatch.setenv("MCP_RESOURCE_URL", "https://trpg.example.com/mcp")
 
     with pytest.raises(ValueError, match="HTTPS"):
         validate_remote_environment()

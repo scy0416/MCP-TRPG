@@ -64,9 +64,12 @@ Production project 연결과 migration 반영은 CI/CD Stage에서 별도 자격
 | 이름 | 필수 시점 | 설명 |
 |---|---|---|
 | `SUPABASE_URL` | Stage 3 | project API URL |
-| `SUPABASE_PUBLISHABLE_KEY` | Stage 3 | RLS를 우회하지 않는 공개 key |
+| `SUPABASE_PUBLISHABLE_KEY` | Stage 5 | RLS를 우회하지 않는 공개 key; OAuth 동의 화면에서 사용 |
 | `SUPABASE_PROJECT_REF` | remote CLI 작업 | 개발 project reference |
 | `SUPABASE_SECRET_KEY` | 관리 작업만 | RLS를 우회하는 backend secret |
+| `SUPABASE_AUTH_ISSUER` | Stage 5, 선택 | 기본값은 `${SUPABASE_URL}/auth/v1` |
+| `SUPABASE_JWKS_URL` | Stage 5, 선택 | 기본값은 issuer의 JWKS endpoint |
+| `MCP_RESOURCE_URL` | Stage 5 | 외부에서 접근할 정확한 HTTPS `/mcp` URL |
 
 secret key는 MCP App UI, 로그, Tool 응답 또는 클라이언트 JavaScript로 전달하지 않는다.
 
@@ -84,7 +87,7 @@ hosted project 환경변수까지 확인한다. 검증기는 값 자체를 출�
 uv run python scripts/check_supabase_setup.py --require-remote
 ```
 
-Stage 3 schema 작업 전 완료 조건:
+Hosted 통합 작업 전 완료 조건:
 
 - 개발 project가 `ap-northeast-2`에 생성되어 있다.
 - production project 또는 별도의 production 생성 일정이 확정되어 있다.
@@ -92,3 +95,5 @@ Stage 3 schema 작업 전 완료 조건:
 - `.env`에 개발 URL, publishable key와 project ref가 있다.
 - Docker 기반 로컬 stack 또는 hosted development DB 중 하나에 연결할 수 있다.
 
+OAuth server, token audience와 MCP 환경 구성은
+[`authentication.md`](authentication.md)를 참고한다.

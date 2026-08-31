@@ -8,6 +8,8 @@ ChatGPT 등 MCP 호스트에서 AI GM과 함께 플레이하는 TRPG 서버입�
 - Python 3.12 프로젝트
 - MCP Python SDK v2 기반 서버
 - Streamable HTTP `/mcp` 엔드포인트
+- Supabase OAuth 2.1 및 audience-bound JWT 인증
+- OAuth Protected Resource Metadata와 사용자 동의 화면
 - `get_server_info` MCP Tool
 - 공개 liveness endpoint `GET /health`
 
@@ -15,6 +17,7 @@ ChatGPT 등 MCP 호스트에서 AI GM과 함께 플레이하는 TRPG 서버입�
 Supabase 환경 구성은 [`docs/supabase-setup.md`](docs/supabase-setup.md)를 참고하세요.
 데이터 관계와 불변조건은 [`docs/database-schema.md`](docs/database-schema.md)를 참고하세요.
 데이터 접근 권한과 RLS 경계는 [`docs/database-security.md`](docs/database-security.md)를 참고하세요.
+MCP 인증 구성과 운영 절차는 [`docs/authentication.md`](docs/authentication.md)를 참고하세요.
 
 ## 로컬 실행
 
@@ -29,6 +32,8 @@ uv run uvicorn trpg_mcp.main:app --host 127.0.0.1 --port 8000
 
 - MCP: `http://127.0.0.1:8000/mcp`
 - Health: `http://127.0.0.1:8000/health`
+- OAuth consent: `http://127.0.0.1:8000/oauth/consent`
+- Protected Resource Metadata: `http://127.0.0.1:8000/.well-known/oauth-protected-resource/mcp`
 
 ## 검증
 

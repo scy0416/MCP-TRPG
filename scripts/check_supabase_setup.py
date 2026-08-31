@@ -4,6 +4,7 @@ import argparse
 import os
 import tomllib
 from pathlib import Path
+from urllib.parse import urlsplit
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = PROJECT_ROOT / "supabase" / "config.toml"
@@ -21,7 +22,12 @@ def validate_local_config() -> None:
         ("db", "migrations", "enabled"): True,
         ("auth", "enabled"): True,
         ("auth", "minimum_password_length"): 8,
-        ("auth", "oauth_server", "enabled"): False,
+        ("auth", "hook", "custom_access_token", "enabled"): True,
+        ("auth", "hook", "custom_access_token", "uri"): (
+            "pg-functions://postgres/private/custom_access_token_hook"
+        ),
+        ("auth", "oauth_server", "enabled"): True,
+        ("auth", "oauth_server", "allow_dynamic_registration"): True,
         ("realtime", "enabled"): False,
         ("storage", "enabled"): False,
         ("edge_runtime", "enabled"): False,
@@ -42,6 +48,7 @@ def validate_remote_environment() -> None:
         "SUPABASE_URL",
         "SUPABASE_PUBLISHABLE_KEY",
         "SUPABASE_PROJECT_REF",
+        "MCP_RESOURCE_URL",
     )
     missing_names = [name for name in required_names if not os.environ.get(name)]
     if missing_names:
@@ -51,6 +58,12 @@ def validate_remote_environment() -> None:
     supabase_url = os.environ["SUPABASE_URL"]
     if not supabase_url.startswith("https://"):
         raise ValueError("Hosted SUPABASE_URL must use HTTPS")
+
+    resource_url = urlsplit(os.environ["MCP_RESOURCE_URL"])
+    if resource_url.scheme != "https" or resource_url.path.rstrip("/") != "/mcp":
+        raise ValueError("Hosted MCP_RESOURCE_URL must be an HTTPS /mcp URL")
+    if resource_url.query or resource_url.fragment or resource_url.username:
+        raise ValueError("Hosted MCP_RESOURCE_URL must not contain URL extras")
 
 
 def parse_args() -> argparse.Namespace:
