@@ -1,6 +1,7 @@
 """Authenticated ASGI entry point and initial MCP tools."""
 
 from mcp.server import MCPServer
+from mcp.server.apps import Apps
 from mcp.server.auth.provider import TokenVerifier
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -9,6 +10,7 @@ from trpg_mcp import __version__
 from trpg_mcp.auth import create_auth
 from trpg_mcp.config import Settings, settings
 from trpg_mcp.consent import consent_response
+from trpg_mcp.dice_app import DICE_APP_HTML, DICE_RESOURCE_URI
 from trpg_mcp.game_repository import GameRepository, SupabaseGameRepository
 from trpg_mcp.resources import ResourceProvider, register_resources
 from trpg_mcp.tools import register_core_tools
@@ -25,6 +27,15 @@ def create_mcp_server(
 ) -> MCPServer:
     """Build one MCP server with an injectable verifier for isolated tests."""
     auth_settings, default_verifier = create_auth(runtime_settings)
+    apps = Apps()
+    apps.add_html_resource(
+        DICE_RESOURCE_URI,
+        DICE_APP_HTML,
+        name="trpg_dice_app",
+        title="MCP-TRPG Dice",
+        description="Roll a pending ability check and submit raw dice results",
+        prefers_border=True,
+    )
     server = MCPServer(
         SERVER_NAME,
         instructions=(
@@ -33,6 +44,7 @@ def create_mcp_server(
         ),
         auth=auth_settings,
         token_verifier=token_verifier or default_verifier,
+        extensions=[apps],
     )
 
     @server.tool(
@@ -64,7 +76,7 @@ def create_mcp_server(
 
     repository = game_repository or SupabaseGameRepository(runtime_settings)
     register_resources(server, resource_provider or repository)
-    register_core_tools(server, repository)
+    register_core_tools(server, repository, dice_resource_uri=DICE_RESOURCE_URI)
     return server
 
 

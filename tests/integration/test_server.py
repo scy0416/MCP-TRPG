@@ -94,6 +94,7 @@ async def test_server_lists_and_calls_info_tool() -> None:
             "create_check",
         ]
         assert tools.tools[0].meta == {"securitySchemes": [{"type": "oauth2", "scopes": []}]}
+        assert tools.tools[-1].meta == {"ui": {"resourceUri": "ui://trpg/dice"}}
 
         result = await client.call_tool("get_server_info", {})
         assert result.is_error is False
@@ -104,7 +105,10 @@ async def test_server_lists_and_calls_info_tool() -> None:
         }
 
         resources = await client.list_resources()
-        assert [resource.uri for resource in resources.resources] == ["trpg://rules/core"]
+        assert [resource.uri for resource in resources.resources] == [
+            "ui://trpg/dice",
+            "trpg://rules/core",
+        ]
         templates = await client.list_resource_templates()
         assert {template.uri_template for template in templates.resource_templates} == {
             "trpg://campaign/{campaign_id}/context",
@@ -113,6 +117,10 @@ async def test_server_lists_and_calls_info_tool() -> None:
         }
         rules = await client.read_resource("trpg://rules/core")
         assert "AI GM" in rules.contents[0].text
+        dice = await client.read_resource("ui://trpg/dice")
+        assert dice.contents[0].mime_type == "text/html;profile=mcp-app"
+        assert "crypto.getRandomValues" in dice.contents[0].text
+        assert 'callTool("resolve_check"' in dice.contents[0].text
 
 
 def test_campaign_resource_context_is_scoped_and_sanitized() -> None:

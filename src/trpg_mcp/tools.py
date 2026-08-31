@@ -21,8 +21,10 @@ ABILITY_ALIASES = {
 }
 
 
-def register_core_tools(server, repository: GameRepository) -> None:
-    """Register the smallest persistent game loop before check mechanics."""
+def register_core_tools(
+    server, repository: GameRepository, *, dice_resource_uri: str | None = None
+) -> None:
+    """Register persistent campaign, character, snapshot, and check tools."""
 
     @server.tool()
     async def create_campaign(title: str) -> dict[str, object]:
@@ -60,7 +62,13 @@ def register_core_tools(server, repository: GameRepository) -> None:
             raise LookupError("campaign is not available to this user")
         return dict(game)
 
-    @server.tool()
+    check_tool = (
+        server.tool(meta={"ui": {"resourceUri": dice_resource_uri}})
+        if dice_resource_uri
+        else server.tool()
+    )
+
+    @check_tool
     async def create_check(
         campaign_id: str,
         character_id: str,

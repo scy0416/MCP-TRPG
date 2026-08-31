@@ -11,6 +11,7 @@ ChatGPT 등 MCP 호스트에서 AI GM과 함께 플레이하는 TRPG 서버입�
 - Supabase OAuth 2.1 및 audience-bound JWT 인증
 - OAuth Protected Resource Metadata와 사용자 동의 화면
 - 핵심 게임 Tool `create_campaign`, `create_character`, `get_game`, `create_check`
+- Dice MCP App Resource `ui://trpg/dice` (create_check 결과에 연결)
 - `get_server_info` MCP Tool
 - 공개 liveness endpoint `GET /health`
 
@@ -20,6 +21,7 @@ Supabase 환경 구성은 [`docs/supabase-setup.md`](docs/supabase-setup.md)를 
 데이터 접근 권한과 RLS 경계는 [`docs/database-security.md`](docs/database-security.md)를 참고하세요.
 MCP 인증 구성과 운영 절차는 [`docs/authentication.md`](docs/authentication.md)를 참고하세요.
 AI-facing Resource URI와 payload 경계는 [`docs/mcp-resources.md`](docs/mcp-resources.md)를 참고하세요.
+MCP Tool 입력·출력과 Dice App 동작은 [`docs/mcp-tools.md`](docs/mcp-tools.md)를 참고하세요.
 
 ## 로컬 실행
 
