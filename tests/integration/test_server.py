@@ -1,7 +1,7 @@
 """MCP and ASGI integration tests for the initial server."""
 
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 
 import pytest
 from mcp import Client
@@ -11,6 +11,25 @@ from starlette.testclient import TestClient
 from trpg_mcp.config import Settings
 from trpg_mcp.main import create_mcp_server, mcp
 from trpg_mcp.resources import SnapshotResourceProvider
+
+
+class FakeGameRepository(SnapshotResourceProvider):
+    async def create_campaign(self, access_token: AccessToken, title: str) -> Mapping[str, object]:
+        return {"id": "10000000-0000-0000-0000-000000000003", "title": title, "status": "active"}
+
+    async def create_character(
+        self,
+        access_token: AccessToken,
+        campaign_id: str,
+        name: str,
+        stats: Mapping[str, int],
+    ) -> Mapping[str, object]:
+        return {"id": "10000000-0000-0000-0000-000000000004", "name": name, "stats": dict(stats)}
+
+    async def get_game(
+        self, access_token: AccessToken, campaign_id: str
+    ) -> Mapping[str, object] | None:
+        return {"campaign": {"id": campaign_id, "title": "Tower", "status": "active"}}
 
 
 class StaticTokenVerifier:
@@ -47,7 +66,12 @@ def http_client() -> Iterator[TestClient]:
 async def test_server_lists_and_calls_info_tool() -> None:
     async with Client(mcp, raise_exceptions=True) as client:
         tools = await client.list_tools()
-        assert [tool.name for tool in tools.tools] == ["get_server_info"]
+        assert [tool.name for tool in tools.tools] == [
+            "get_server_info",
+            "create_campaign",
+            "create_character",
+            "get_game",
+        ]
         assert tools.tools[0].meta == {"securitySchemes": [{"type": "oauth2", "scopes": []}]}
 
         result = await client.call_tool("get_server_info", {})
@@ -84,7 +108,10 @@ def test_campaign_resource_context_is_scoped_and_sanitized() -> None:
         },
     )
     server = create_mcp_server(
-        Settings(), token_verifier=StaticTokenVerifier(), resource_provider=provider
+        Settings(),
+        token_verifier=StaticTokenVerifier(),
+        resource_provider=provider,
+        game_repository=FakeGameRepository(),
     )
     app = server.streamable_http_app(json_response=True, stateless_http=True)
     request = {
@@ -109,6 +136,39 @@ def test_campaign_resource_context_is_scoped_and_sanitized() -> None:
     assert "Tower" in body
     assert "owner_id" not in body
     assert "user_id" not in body
+
+
+def test_core_tool_uses_authenticated_repository() -> None:
+    server = create_mcp_server(
+        Settings(), token_verifier=StaticTokenVerifier(), game_repository=FakeGameRepository()
+    )
+    app = server.streamable_http_app(json_response=True, stateless_http=True)
+    request = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+            "name": "create_character",
+            "arguments": {
+                "campaign_id": "10000000-0000-0000-0000-000000000002",
+                "name": "Arin",
+                "stats": {"str": 3, "dex": 2, "int": 1, "cha": 0},
+            },
+        },
+    }
+
+    with TestClient(app, base_url="http://127.0.0.1:8000") as client:
+        response = client.post(
+            "/mcp",
+            json=request,
+            headers={
+                "Authorization": "Bearer valid-test-token",
+                "Accept": "application/json, text/event-stream",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["result"]["structuredContent"]["name"] == "Arin"
 
 
 def test_health_endpoint(http_client: TestClient) -> None:

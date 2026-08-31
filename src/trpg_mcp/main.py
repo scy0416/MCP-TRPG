@@ -9,7 +9,9 @@ from trpg_mcp import __version__
 from trpg_mcp.auth import create_auth
 from trpg_mcp.config import Settings, settings
 from trpg_mcp.consent import consent_response
-from trpg_mcp.resources import ResourceProvider, SnapshotResourceProvider, register_resources
+from trpg_mcp.game_repository import GameRepository, SupabaseGameRepository
+from trpg_mcp.resources import ResourceProvider, register_resources
+from trpg_mcp.tools import register_core_tools
 
 SERVER_NAME = "MCP-TRPG"
 
@@ -19,6 +21,7 @@ def create_mcp_server(
     *,
     token_verifier: TokenVerifier | None = None,
     resource_provider: ResourceProvider | None = None,
+    game_repository: GameRepository | None = None,
 ) -> MCPServer:
     """Build one MCP server with an injectable verifier for isolated tests."""
     auth_settings, default_verifier = create_auth(runtime_settings)
@@ -59,7 +62,9 @@ def create_mcp_server(
         """Render the public Supabase OAuth consent UI."""
         return consent_response(runtime_settings)
 
-    register_resources(server, resource_provider or SnapshotResourceProvider())
+    repository = game_repository or SupabaseGameRepository(runtime_settings)
+    register_resources(server, resource_provider or repository)
+    register_core_tools(server, repository)
     return server
 
 

@@ -41,8 +41,9 @@ context는 다음과 같이 의미 단위로 조합한다.
 ## 구현 경계
 
 `ResourceProvider`는 이미 권한이 적용된 snapshot을 반환하는 읽기 인터페이스다.
-현재 로컬 테스트는 `SnapshotResourceProvider`를 사용한다. 다음 단계에서 이 인터페이스를
-Supabase REST/PostgREST adapter로 연결하며, adapter는 다음 순서를 지켜야 한다.
+운영 기본값은 `SupabaseGameRepository`이며 Supabase REST/PostgREST 요청에 현재 access
+token을 전달한다. 테스트는 `SnapshotResourceProvider`를 사용한다. adapter는 다음 순서를
+지켜야 한다.
 
 1. access token의 `sub`를 사용자 identity로 사용한다.
 2. campaign membership을 확인하는 RLS 적용 요청으로 campaign과 관련 row를 조회한다.
@@ -59,5 +60,5 @@ uv run pytest tests/integration/test_server.py
 ```
 
 MCP client는 `resources/list`로 static resource와 template metadata를 확인한 뒤,
-인증된 상태에서 `resources/read`를 호출한다. 다음 Stage의 `get_game` Tool도 같은
-context builder를 재사용해 자연어 Tool 응답과 Resource 응답의 의미가 갈라지지 않게 한다.
+인증된 상태에서 `resources/read`를 호출한다. Stage 7의 `get_game` Tool도 같은
+repository context를 재사용해 자연어 Tool 응답과 Resource 응답의 의미가 갈라지지 않게 한다.
