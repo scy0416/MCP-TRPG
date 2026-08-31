@@ -35,6 +35,11 @@ policies.
 `game_events` is append-only for authenticated users: the role has no `UPDATE` or `DELETE` grant,
 not merely a filtering policy. Trusted maintenance access remains available to `service_role`.
 
+Core campaign and character creation uses authenticated-only, fixed-search-path Supabase RPCs.
+They derive `owner_id`/`user_id` from `auth.uid()`, enforce membership for character creation,
+and append the corresponding creation event in the same transaction. The MCP server never accepts
+an arbitrary owner or caller identity from the AI.
+
 ## Structural immutability
 
 Authenticated `UPDATE` grants are limited to mutable columns. IDs, campaign/character foreign

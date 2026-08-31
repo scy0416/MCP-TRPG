@@ -62,3 +62,7 @@ uv run pytest tests/integration/test_server.py
 MCP client는 `resources/list`로 static resource와 template metadata를 확인한 뒤,
 인증된 상태에서 `resources/read`를 호출한다. Stage 7의 `get_game` Tool도 같은
 repository context를 재사용해 자연어 Tool 응답과 Resource 응답의 의미가 갈라지지 않게 한다.
+
+`create_campaign`과 `create_character` 쓰기는 Supabase RPC에서 row와
+`campaign_created`/`character_created` 이벤트를 한 트랜잭션으로 기록한다. Resource는
+그 커밋 이후의 상태만 읽으며, Resource 자체는 쓰기 작업을 수행하지 않는다.

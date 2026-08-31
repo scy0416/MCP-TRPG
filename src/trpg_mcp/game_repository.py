@@ -129,13 +129,12 @@ class SupabaseGameRepository:
 
     async def create_campaign(self, access_token: AccessToken, title: str) -> Mapping[str, object]:
         rows = await self._request(
-            table="campaigns",
+            table="rpc/create_campaign",
             method="POST",
             access_token=access_token,
-            payload={"owner_id": access_token.subject, "title": title, "status": "active"},
-            prefer="return=representation",
+            payload={"p_title": title},
         )
-        row = _first_object(rows, "campaign creation")
+        row = _object_response(rows, "campaign creation")
         return _campaign_row(row)
 
     async def create_character(
@@ -146,23 +145,19 @@ class SupabaseGameRepository:
         stats: Mapping[str, int],
     ) -> Mapping[str, object]:
         rows = await self._request(
-            table="characters",
+            table="rpc/create_character",
             method="POST",
             access_token=access_token,
             payload={
-                "campaign_id": campaign_id,
-                "user_id": access_token.subject,
-                "name": name,
-                "hp": 10 + stats["str"],
-                "max_hp": 10 + stats["str"],
-                "str": stats["str"],
-                "dex": stats["dex"],
-                "int": stats["int"],
-                "cha": stats["cha"],
+                "p_campaign_id": campaign_id,
+                "p_name": name,
+                "p_str": stats["str"],
+                "p_dex": stats["dex"],
+                "p_int": stats["int"],
+                "p_cha": stats["cha"],
             },
-            prefer="return=representation",
         )
-        row = _first_object(rows, "character creation")
+        row = _object_response(rows, "character creation")
         return _character_row(row)
 
     async def get_game(
@@ -294,6 +289,12 @@ def _first_object(value: object, operation: str) -> Mapping[str, object]:
     if isinstance(value, list) and value and isinstance(value[0], Mapping):
         return value[0]
     raise SupabaseRestError(502, f"Supabase returned no row for {operation}")
+
+
+def _object_response(value: object, operation: str) -> Mapping[str, object]:
+    if isinstance(value, Mapping):
+        return value
+    return _first_object(value, operation)
 
 
 def _campaign_row(row: Mapping[str, object]) -> dict[str, object]:
