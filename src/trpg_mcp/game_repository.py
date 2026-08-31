@@ -46,6 +46,10 @@ class GameRepository(ResourceProvider, Protocol):
         context: str,
     ) -> Mapping[str, object]: ...
 
+    async def resolve_check(
+        self, access_token: AccessToken, check_id: str, rolls: list[int]
+    ) -> Mapping[str, object]: ...
+
 
 class SupabaseRestError(RuntimeError):
     """Safe-to-log PostgREST error without credentials or authorization headers."""
@@ -267,6 +271,17 @@ class SupabaseGameRepository:
         )
         return _check_row(_object_response(result, "check creation"))
 
+    async def resolve_check(
+        self, access_token: AccessToken, check_id: str, rolls: list[int]
+    ) -> Mapping[str, object]:
+        result = await self._request(
+            table="rpc/resolve_check",
+            method="POST",
+            access_token=access_token,
+            payload={"p_check_id": check_id, "p_rolls": rolls},
+        )
+        return _resolved_check(_object_response(result, "check resolution"))
+
     async def get_campaign_context(
         self, campaign_id: str, subject: str
     ) -> Mapping[str, object] | None:
@@ -369,4 +384,23 @@ def _check_row(row: Mapping[str, object]) -> dict[str, object]:
         "difficulty": row.get("difficulty"),
         "reason": row.get("context"),
         "status": row.get("status"),
+    }
+
+
+def _resolved_check(row: Mapping[str, object]) -> dict[str, object]:
+    return {
+        key: row.get(key)
+        for key in (
+            "check_id",
+            "label",
+            "dice",
+            "modifier",
+            "difficulty",
+            "reason",
+            "rolls",
+            "total",
+            "success",
+            "outcome",
+            "status",
+        )
     }

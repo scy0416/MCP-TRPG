@@ -5,6 +5,7 @@ import pytest
 from trpg_mcp.tools import (
     _validate_ability,
     _validate_dice_spec,
+    _validate_rolls,
     _validate_stats,
     _validate_text,
     _validate_uuid,
@@ -56,3 +57,6 @@ def test_validate_check_inputs() -> None:
         _validate_dice_spec({"count": 0, "sides": 20})
     with pytest.raises(ValueError, match="dice"):
         _validate_dice_spec(None)  # type: ignore[arg-type]
+    assert _validate_rolls([1, 20]) == [1, 20]
+    with pytest.raises(ValueError, match="rolls"):
+        _validate_rolls([])

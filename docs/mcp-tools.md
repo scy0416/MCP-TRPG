@@ -47,7 +47,15 @@ modifier를 보낼 수 없고, 서버가 캐릭터에 저장된 능력치에서 
 `create_check` 결과는 `ui://trpg/dice` MCP App으로 표시된다. App은 Web Crypto로
 원시 주사위 값만 생성하고, `resolve_check` 호출 시 `check_id`와 `rolls`만 보낸다.
 modifier, 난이도, 성공 여부와 같은 서버 계산값은 UI가 확정 데이터로 전송하지
-않는다. `resolve_check`의 서버 반영은 다음 단계에서 구현한다.
+않는다. 서버는 `resolve_check`에서 이 값을 다시 계산한다.
 
 한 캠페인에는 동시에 하나의 `pending` 판정만 존재할 수 있다. 판정 굴림과
-`pending → resolved` 전환은 다음 단계의 `resolve_check`에서 다룬다.
+`pending → resolved` 전환은 `resolve_check`에서 다룬다.
+
+## `resolve_check`
+
+Dice App은 `check_id`와 사용자가 실제로 굴린 원시 `rolls` 배열만 제출한다. 서버는
+저장된 주사위 규격·modifier·난이도를 다시 읽어 total과 성공 여부를 계산하고,
+판정 상태와 `ability_check_resolved` 이벤트를 하나의 트랜잭션으로 확정한다.
+이미 해결된 `check_id`를 재전송하면 최초 확정 결과를 반환하며 상태를 중복 변경하지
+않는다.

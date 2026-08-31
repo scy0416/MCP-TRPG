@@ -51,6 +51,23 @@ class FakeGameRepository(SnapshotResourceProvider):
             "status": "pending",
         }
 
+    async def resolve_check(
+        self, access_token: AccessToken, check_id: str, rolls: list[int]
+    ) -> Mapping[str, object]:
+        return {
+            "check_id": check_id,
+            "label": "Str Check",
+            "dice": {"count": len(rolls), "sides": 20},
+            "modifier": 3,
+            "difficulty": 15,
+            "reason": "문을 부순다",
+            "rolls": rolls,
+            "total": sum(rolls) + 3,
+            "success": sum(rolls) + 3 >= 15,
+            "outcome": "success" if sum(rolls) + 3 >= 15 else "failure",
+            "status": "resolved",
+        }
+
 
 class StaticTokenVerifier:
     async def verify_token(self, token: str) -> AccessToken | None:
@@ -92,9 +109,10 @@ async def test_server_lists_and_calls_info_tool() -> None:
             "create_character",
             "get_game",
             "create_check",
+            "resolve_check",
         ]
         assert tools.tools[0].meta == {"securitySchemes": [{"type": "oauth2", "scopes": []}]}
-        assert tools.tools[-1].meta == {"ui": {"resourceUri": "ui://trpg/dice"}}
+        assert tools.tools[4].meta == {"ui": {"resourceUri": "ui://trpg/dice"}}
 
         result = await client.call_tool("get_server_info", {})
         assert result.is_error is False
@@ -236,6 +254,43 @@ def test_create_check_does_not_accept_a_client_modifier() -> None:
     result = response.json()["result"]["structuredContent"]
     assert result["modifier"] == 3
     assert result["status"] == "pending"
+
+
+def test_resolve_check_accepts_only_raw_rolls() -> None:
+    server = create_mcp_server(
+        Settings(), token_verifier=StaticTokenVerifier(), game_repository=FakeGameRepository()
+    )
+    app = server.streamable_http_app(json_response=True, stateless_http=True)
+    request = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+            "name": "resolve_check",
+            "arguments": {
+                "check_id": "10000000-0000-0000-0000-000000000005",
+                "rolls": [16],
+                "modifier": 99,
+                "success": False,
+            },
+        },
+    }
+
+    with TestClient(app, base_url="http://127.0.0.1:8000") as client:
+        response = client.post(
+            "/mcp",
+            json=request,
+            headers={
+                "Authorization": "Bearer valid-test-token",
+                "Accept": "application/json, text/event-stream",
+            },
+        )
+
+    assert response.status_code == 200
+    result = response.json()["result"]["structuredContent"]
+    assert result["total"] == 19
+    assert result["success"] is True
+    assert result["status"] == "resolved"
 
 
 def test_health_endpoint(http_client: TestClient) -> None:

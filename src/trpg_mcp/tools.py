@@ -102,6 +102,16 @@ def register_core_tools(
             )
         )
 
+    @server.tool()
+    async def resolve_check(check_id: str, rolls: list[int]) -> dict[str, object]:
+        """Resolve a pending check using only raw user-provided dice results."""
+        access_token = _require_access_token()
+        validated_check_id = _validate_uuid(check_id, "check_id")
+        validated_rolls = _validate_rolls(rolls)
+        return dict(
+            await repository.resolve_check(access_token, validated_check_id, validated_rolls)
+        )
+
 
 def _require_access_token() -> AccessToken:
     access_token = get_access_token()
@@ -151,3 +161,11 @@ def _validate_dice_spec(dice_spec: Mapping[str, object]) -> dict[str, int]:
     if not 1 <= count <= 20 or not 2 <= sides <= 100:
         raise ValueError("dice count must be 1..20 and sides must be 2..100")
     return {"count": count, "sides": sides}
+
+
+def _validate_rolls(rolls: list[int]) -> list[int]:
+    if not isinstance(rolls, list) or not 1 <= len(rolls) <= 20:
+        raise ValueError("rolls must be a list containing 1..20 values")
+    if any(isinstance(value, bool) or not isinstance(value, int) for value in rolls):
+        raise ValueError("rolls must contain only integers")
+    return list(rolls)
