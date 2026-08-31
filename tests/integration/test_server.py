@@ -10,6 +10,7 @@ from starlette.testclient import TestClient
 
 from trpg_mcp.config import Settings
 from trpg_mcp.main import create_mcp_server, mcp
+from trpg_mcp.resources import SnapshotResourceProvider
 
 
 class StaticTokenVerifier:
@@ -50,13 +51,64 @@ async def test_server_lists_and_calls_info_tool() -> None:
         assert tools.tools[0].meta == {"securitySchemes": [{"type": "oauth2", "scopes": []}]}
 
         result = await client.call_tool("get_server_info", {})
+        assert result.is_error is False
+        assert result.structured_content == {
+            "name": "MCP-TRPG",
+            "version": "0.1.0",
+            "transport": "streamable-http",
+        }
 
-    assert result.is_error is False
-    assert result.structured_content == {
-        "name": "MCP-TRPG",
-        "version": "0.1.0",
-        "transport": "streamable-http",
+        resources = await client.list_resources()
+        assert [resource.uri for resource in resources.resources] == ["trpg://rules/core"]
+        templates = await client.list_resource_templates()
+        assert {template.uri_template for template in templates.resource_templates} == {
+            "trpg://campaign/{campaign_id}/context",
+            "trpg://campaign/{campaign_id}/scene",
+            "trpg://campaign/{campaign_id}/history/recent",
+        }
+        rules = await client.read_resource("trpg://rules/core")
+        assert "AI GM" in rules.contents[0].text
+
+
+def test_campaign_resource_context_is_scoped_and_sanitized() -> None:
+    provider = SnapshotResourceProvider()
+    campaign_id = "10000000-0000-0000-0000-000000000002"
+    provider.put(
+        campaign_id,
+        "10000000-0000-0000-0000-000000000001",
+        {
+            "context": {
+                "campaign": {"id": campaign_id, "title": "Tower", "owner_id": "secret"},
+                "character": {"name": "Arin", "user_id": "secret", "hp": 13},
+            }
+        },
+    )
+    server = create_mcp_server(
+        Settings(), token_verifier=StaticTokenVerifier(), resource_provider=provider
+    )
+    app = server.streamable_http_app(json_response=True, stateless_http=True)
+    request = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "resources/read",
+        "params": {"uri": f"trpg://campaign/{campaign_id}/context"},
     }
+
+    with TestClient(app, base_url="http://127.0.0.1:8000") as client:
+        response = client.post(
+            "/mcp",
+            json=request,
+            headers={
+                "Authorization": "Bearer valid-test-token",
+                "Accept": "application/json, text/event-stream",
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()["result"]["contents"][0]["text"]
+    assert "Tower" in body
+    assert "owner_id" not in body
+    assert "user_id" not in body
 
 
 def test_health_endpoint(http_client: TestClient) -> None:

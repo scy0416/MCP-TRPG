@@ -18,6 +18,7 @@ Supabase 환경 구성은 [`docs/supabase-setup.md`](docs/supabase-setup.md)를 
 데이터 관계와 불변조건은 [`docs/database-schema.md`](docs/database-schema.md)를 참고하세요.
 데이터 접근 권한과 RLS 경계는 [`docs/database-security.md`](docs/database-security.md)를 참고하세요.
 MCP 인증 구성과 운영 절차는 [`docs/authentication.md`](docs/authentication.md)를 참고하세요.
+AI-facing Resource URI와 payload 경계는 [`docs/mcp-resources.md`](docs/mcp-resources.md)를 참고하세요.
 
 ## 로컬 실행
 
@@ -34,6 +35,13 @@ uv run uvicorn trpg_mcp.main:app --host 127.0.0.1 --port 8000
 - Health: `http://127.0.0.1:8000/health`
 - OAuth consent: `http://127.0.0.1:8000/oauth/consent`
 - Protected Resource Metadata: `http://127.0.0.1:8000/.well-known/oauth-protected-resource/mcp`
+
+MCP Resources:
+
+- `trpg://rules/core`
+- `trpg://campaign/{campaign_id}/context`
+- `trpg://campaign/{campaign_id}/scene`
+- `trpg://campaign/{campaign_id}/history/recent`
 
 ## 검증
 
