@@ -10,7 +10,7 @@ ChatGPT 등 MCP 호스트에서 AI GM과 함께 플레이하는 TRPG 서버입�
 - Streamable HTTP `/mcp` 엔드포인트
 - Supabase OAuth 2.1 및 audience-bound JWT 인증
 - OAuth Protected Resource Metadata와 사용자 동의 화면
-- 핵심 게임 Tool `create_campaign`, `create_character`, `get_game`
+- 핵심 게임 Tool `create_campaign`, `create_character`, `get_game`, `create_check`
 - `get_server_info` MCP Tool
 - 공개 liveness endpoint `GET /health`
 

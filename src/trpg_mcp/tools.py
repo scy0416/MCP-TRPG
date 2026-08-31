@@ -9,6 +9,16 @@ from mcp.server.auth.provider import AccessToken
 from trpg_mcp.game_repository import GameRepository
 
 ABILITIES = ("str", "dex", "int", "cha")
+ABILITY_ALIASES = {
+    "str": "str",
+    "strength": "str",
+    "dex": "dex",
+    "dexterity": "dex",
+    "int": "int",
+    "intelligence": "int",
+    "cha": "cha",
+    "charisma": "cha",
+}
 
 
 def register_core_tools(server, repository: GameRepository) -> None:
@@ -50,6 +60,40 @@ def register_core_tools(server, repository: GameRepository) -> None:
             raise LookupError("campaign is not available to this user")
         return dict(game)
 
+    @server.tool()
+    async def create_check(
+        campaign_id: str,
+        character_id: str,
+        ability: str,
+        dice_spec: dict[str, int],
+        difficulty: int,
+        reason: str,
+    ) -> dict[str, object]:
+        """Create one pending ability check using the character's stored modifier."""
+        access_token = _require_access_token()
+        validated_campaign_id = _validate_uuid(campaign_id, "campaign_id")
+        validated_character_id = _validate_uuid(character_id, "character_id")
+        check_type = _validate_ability(ability)
+        validated_dice = _validate_dice_spec(dice_spec)
+        if (
+            isinstance(difficulty, bool)
+            or not isinstance(difficulty, int)
+            or not 5 <= difficulty <= 25
+        ):
+            raise ValueError("difficulty must be an integer between 5 and 25")
+        _validate_text(reason, "reason", 1000)
+        return dict(
+            await repository.create_check(
+                access_token,
+                validated_campaign_id,
+                validated_character_id,
+                check_type,
+                validated_dice,
+                difficulty,
+                reason.strip(),
+            )
+        )
+
 
 def _require_access_token() -> AccessToken:
     access_token = get_access_token()
@@ -79,3 +123,23 @@ def _validate_stats(stats: Mapping[str, object]) -> dict[str, int]:
     if sorted(values) != [0, 1, 2, 3]:
         raise ValueError("ability modifiers must be exactly 0, 1, 2 and 3")
     return {ability: int(stats[ability]) for ability in ABILITIES}
+
+
+def _validate_ability(value: str) -> str:
+    if not isinstance(value, str) or value.strip().lower() not in ABILITY_ALIASES:
+        raise ValueError("ability must be str, dex, int, cha or their full names")
+    return ABILITY_ALIASES[value.strip().lower()]
+
+
+def _validate_dice_spec(dice_spec: Mapping[str, object]) -> dict[str, int]:
+    if not isinstance(dice_spec, Mapping):
+        raise ValueError("dice_spec must be an object")
+    if set(dice_spec) != {"count", "sides"}:
+        raise ValueError("dice_spec must contain exactly count and sides")
+    count = dice_spec["count"]
+    sides = dice_spec["sides"]
+    if any(isinstance(value, bool) or not isinstance(value, int) for value in (count, sides)):
+        raise ValueError("dice count and sides must be integers")
+    if not 1 <= count <= 20 or not 2 <= sides <= 100:
+        raise ValueError("dice count must be 1..20 and sides must be 2..100")
+    return {"count": count, "sides": sides}

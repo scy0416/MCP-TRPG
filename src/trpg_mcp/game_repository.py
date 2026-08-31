@@ -35,6 +35,17 @@ class GameRepository(ResourceProvider, Protocol):
         self, access_token: AccessToken, campaign_id: str
     ) -> Mapping[str, object] | None: ...
 
+    async def create_check(
+        self,
+        access_token: AccessToken,
+        campaign_id: str,
+        character_id: str,
+        check_type: str,
+        dice_spec: Mapping[str, int],
+        difficulty: int,
+        context: str,
+    ) -> Mapping[str, object]: ...
+
 
 class SupabaseRestError(RuntimeError):
     """Safe-to-log PostgREST error without credentials or authorization headers."""
@@ -231,6 +242,31 @@ class SupabaseGameRepository:
             "inventory": inventory,
         }
 
+    async def create_check(
+        self,
+        access_token: AccessToken,
+        campaign_id: str,
+        character_id: str,
+        check_type: str,
+        dice_spec: Mapping[str, int],
+        difficulty: int,
+        context: str,
+    ) -> Mapping[str, object]:
+        result = await self._request(
+            table="rpc/create_check",
+            method="POST",
+            access_token=access_token,
+            payload={
+                "p_campaign_id": campaign_id,
+                "p_character_id": character_id,
+                "p_check_type": check_type,
+                "p_dice_spec": dict(dice_spec),
+                "p_difficulty": difficulty,
+                "p_context": context,
+            },
+        )
+        return _check_row(_object_response(result, "check creation"))
+
     async def get_campaign_context(
         self, campaign_id: str, subject: str
     ) -> Mapping[str, object] | None:
@@ -322,3 +358,15 @@ def _entity_row(row: Mapping[str, object]) -> dict[str, object]:
 
 def _inventory_row(row: Mapping[str, object]) -> dict[str, object]:
     return {key: row.get(key) for key in ("id", "item_type", "name", "quantity", "state")}
+
+
+def _check_row(row: Mapping[str, object]) -> dict[str, object]:
+    return {
+        "check_id": row.get("id"),
+        "label": f"{str(row.get('check_type', '')).upper()} Check",
+        "dice": row.get("dice_spec"),
+        "modifier": row.get("modifier"),
+        "difficulty": row.get("difficulty"),
+        "reason": row.get("context"),
+        "status": row.get("status"),
+    }
