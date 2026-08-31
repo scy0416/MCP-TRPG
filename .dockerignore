@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.venv
+.uv-cache
+.pytest_cache
+.ruff_cache
+.python
+.tools
+.worktrees
+tests
+supabase
+docs
+scripts
+*.pyc
+__pycache__

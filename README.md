@@ -23,6 +23,7 @@ Supabase 환경 구성은 [`docs/supabase-setup.md`](docs/supabase-setup.md)를 
 MCP 인증 구성과 운영 절차는 [`docs/authentication.md`](docs/authentication.md)를 참고하세요.
 AI-facing Resource URI와 payload 경계는 [`docs/mcp-resources.md`](docs/mcp-resources.md)를 참고하세요.
 MCP Tool 입력·출력과 Dice App 동작은 [`docs/mcp-tools.md`](docs/mcp-tools.md)를 참고하세요.
+Docker 및 Cloud Run 실행 계약은 [`docs/container.md`](docs/container.md)를 참고하세요.
 
 ## 로컬 실행
 
