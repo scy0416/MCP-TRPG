@@ -9,5 +9,10 @@ __pycache__/
 .ruff_cache/
 htmlcov/
 .coverage
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/*.tfvars
+!infra/terraform/terraform.tfvars.example
 supabase/.branches/
 supabase/.temp/
