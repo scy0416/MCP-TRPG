@@ -12,6 +12,7 @@ ChatGPT 등 MCP 호스트에서 AI GM과 함께 플레이하는 TRPG 서버입�
 - OAuth Protected Resource Metadata와 사용자 동의 화면
 - 핵심 게임 Tool `create_campaign`, `create_character`, `get_game`, `create_check`, `resolve_check`
 - Dice MCP App Resource `ui://trpg/dice` (create_check 결과에 연결)
+- Game MCP App Resource `ui://trpg/game` (get_game 스냅샷 표시)
 - `get_server_info` MCP Tool
 - 공개 liveness endpoint `GET /health`
 

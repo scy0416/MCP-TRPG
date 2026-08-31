@@ -22,7 +22,11 @@ ABILITY_ALIASES = {
 
 
 def register_core_tools(
-    server, repository: GameRepository, *, dice_resource_uri: str | None = None
+    server,
+    repository: GameRepository,
+    *,
+    dice_resource_uri: str | None = None,
+    game_resource_uri: str | None = None,
 ) -> None:
     """Register persistent campaign, character, snapshot, and check tools."""
 
@@ -53,7 +57,13 @@ def register_core_tools(
             )
         )
 
-    @server.tool()
+    game_tool = (
+        server.tool(meta={"ui": {"resourceUri": game_resource_uri}})
+        if game_resource_uri
+        else server.tool()
+    )
+
+    @game_tool
     async def get_game(campaign_id: str) -> dict[str, object]:
         """Read the authenticated user's AI-facing campaign context."""
         access_token = _require_access_token()

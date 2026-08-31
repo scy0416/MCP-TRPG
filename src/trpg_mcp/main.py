@@ -11,6 +11,7 @@ from trpg_mcp.auth import create_auth
 from trpg_mcp.config import Settings, settings
 from trpg_mcp.consent import consent_response
 from trpg_mcp.dice_app import DICE_APP_HTML, DICE_RESOURCE_URI
+from trpg_mcp.game_app import GAME_APP_HTML, GAME_RESOURCE_URI
 from trpg_mcp.game_repository import GameRepository, SupabaseGameRepository
 from trpg_mcp.instructions import SERVER_INSTRUCTIONS
 from trpg_mcp.resources import ResourceProvider, register_resources
@@ -35,6 +36,14 @@ def create_mcp_server(
         name="trpg_dice_app",
         title="MCP-TRPG Dice",
         description="Roll a pending ability check and submit raw dice results",
+        prefers_border=True,
+    )
+    apps.add_html_resource(
+        GAME_RESOURCE_URI,
+        GAME_APP_HTML,
+        name="trpg_game_app",
+        title="MCP-TRPG Game",
+        description="Display the authenticated campaign game snapshot",
         prefers_border=True,
     )
     server = MCPServer(
@@ -74,7 +83,12 @@ def create_mcp_server(
 
     repository = game_repository or SupabaseGameRepository(runtime_settings)
     register_resources(server, resource_provider or repository)
-    register_core_tools(server, repository, dice_resource_uri=DICE_RESOURCE_URI)
+    register_core_tools(
+        server,
+        repository,
+        dice_resource_uri=DICE_RESOURCE_URI,
+        game_resource_uri=GAME_RESOURCE_URI,
+    )
     return server
 
 
