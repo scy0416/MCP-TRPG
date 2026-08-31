@@ -77,7 +77,7 @@ def register_core_tools(
         difficulty: int,
         reason: str,
     ) -> dict[str, object]:
-        """Create one pending ability check using the character's stored modifier."""
+        """Create a pending check; wait for the user's Dice App roll before narrating."""
         access_token = _require_access_token()
         validated_campaign_id = _validate_uuid(campaign_id, "campaign_id")
         validated_character_id = _validate_uuid(character_id, "character_id")
@@ -104,7 +104,7 @@ def register_core_tools(
 
     @server.tool()
     async def resolve_check(check_id: str, rolls: list[int]) -> dict[str, object]:
-        """Resolve a pending check using only raw user-provided dice results."""
+        """Resolve a pending check from raw user rolls; server values are authoritative."""
         access_token = _require_access_token()
         validated_check_id = _validate_uuid(check_id, "check_id")
         validated_rolls = _validate_rolls(rolls)

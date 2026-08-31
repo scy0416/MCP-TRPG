@@ -16,6 +16,8 @@ RULES_CORE = """# MCP-TRPG 핵심 규칙
 - 판정은 d20 + 저장된 능력치 modifier이며, total이 DC 이상이면 성공한다.
 - d20 원값은 사용자가 Dice UI에서 굴린 뒤 서버에 제출한다. AI GM은 대신 굴리지 않는다.
 - 서버 응답으로 확정된 결과만 서술하고, 상태 변경은 MCP Tool을 통해서만 수행한다.
+- 일반 서술 → 필요할 때 `create_check` → 사용자 Roll → `resolve_check` → 결과 서술 순서를 지킨다.
+- AI나 UI가 보낸 modifier, DC, total, success, HP 또는 아이템 변경값은 authoritative하지 않다.
 - Supabase PostgreSQL이 캠페인, 캐릭터, 장면, 아이템과 이벤트의 authoritative source다.
 """
 

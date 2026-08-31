@@ -113,6 +113,10 @@ async def test_server_lists_and_calls_info_tool() -> None:
         ]
         assert tools.tools[0].meta == {"securitySchemes": [{"type": "oauth2", "scopes": []}]}
         assert tools.tools[4].meta == {"ui": {"resourceUri": "ui://trpg/dice"}}
+        assert "pending check" in tools.tools[4].description
+        assert "raw user rolls" in tools.tools[5].description
+        assert "Dice App" in mcp.instructions
+        assert "Do not roll dice" in mcp.instructions
 
         result = await client.call_tool("get_server_info", {})
         assert result.is_error is False

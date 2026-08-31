@@ -12,6 +12,7 @@ from trpg_mcp.config import Settings, settings
 from trpg_mcp.consent import consent_response
 from trpg_mcp.dice_app import DICE_APP_HTML, DICE_RESOURCE_URI
 from trpg_mcp.game_repository import GameRepository, SupabaseGameRepository
+from trpg_mcp.instructions import SERVER_INSTRUCTIONS
 from trpg_mcp.resources import ResourceProvider, register_resources
 from trpg_mcp.tools import register_core_tools
 
@@ -38,10 +39,7 @@ def create_mcp_server(
     )
     server = MCPServer(
         SERVER_NAME,
-        instructions=(
-            "MCP-TRPG is an AI-guided tabletop role-playing game server. "
-            "Every game request is authorized as the authenticated Supabase user."
-        ),
+        instructions=SERVER_INSTRUCTIONS,
         auth=auth_settings,
         token_verifier=token_verifier or default_verifier,
         extensions=[apps],
