@@ -25,6 +25,7 @@ AI-facing Resource URI와 payload 경계는 [`docs/mcp-resources.md`](docs/mcp-r
 MCP Tool 입력·출력과 Dice App 동작은 [`docs/mcp-tools.md`](docs/mcp-tools.md)를 참고하세요.
 Docker 및 Cloud Run 실행 계약은 [`docs/container.md`](docs/container.md)를 참고하세요.
 GCP 인프라 리소스 정의는 [`infra/terraform/README.md`](infra/terraform/README.md)를 참고하세요.
+현재 개발 현황, 배포 환경, 필수 도구와 주요 명령은 [`docs/development-status.md`](docs/development-status.md)를 참고하세요.
 
 ## 로컬 실행
 
