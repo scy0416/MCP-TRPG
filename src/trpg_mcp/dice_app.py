@@ -49,15 +49,20 @@ DICE_APP_HTML = r"""<!doctype html>
       const pending = new Map();
       let nextRequestId = 1;
       let initialized = false;
+      let hostCapabilities = {};
 
       function send(message) {
         parentWindow.postMessage({ jsonrpc: "2.0", ...message }, "*");
       }
 
-      function request(method, params) {
+      function request(method, params, timeoutMs = 5000) {
         const id = nextRequestId++;
         return new Promise((resolve, reject) => {
-          pending.set(id, { resolve, reject });
+          const timer = setTimeout(() => {
+            pending.delete(id);
+            reject(new Error("호스트 응답 시간이 초과됐습니다."));
+          }, timeoutMs);
+          pending.set(id, { resolve, reject, timer });
           send({ id, method, params });
         });
       }
@@ -73,6 +78,7 @@ DICE_APP_HTML = r"""<!doctype html>
         if (message.id !== undefined && pending.has(message.id)) {
           const callback = pending.get(message.id);
           pending.delete(message.id);
+          clearTimeout(callback.timer);
           if (message.error) callback.reject(new Error(message.error.message || "호스트 요청에 실패했습니다."));
           else callback.resolve(message.result);
           return;
@@ -122,7 +128,19 @@ DICE_APP_HTML = r"""<!doctype html>
         ].join("\\n");
         // A tool call made by a View is returned to the View only. Send the
         // authoritative result to the host so the model can continue in chat.
-        await request("ui/message", { role: "user", content: [{ type: "text", text }] });
+        if (hostCapabilities.message) {
+          try {
+            await request("ui/message", { role: "user", content: [{ type: "text", text }] });
+            return;
+          } catch (error) {
+            if (!hostCapabilities.updateModelContext) throw error;
+          }
+        }
+        if (hostCapabilities.updateModelContext) {
+          await request("ui/update-model-context", { content: [{ type: "text", text }] });
+          return;
+        }
+        throw new Error("이 Claude 호스트는 채팅 메시지 전달을 지원하지 않습니다.");
       }
 
       async function roll() {
@@ -140,13 +158,13 @@ DICE_APP_HTML = r"""<!doctype html>
           const resolved = response && (response.structuredContent || response);
           if (resolved && resolved.outcome) {
             byId("result").textContent = resolved.outcome.toUpperCase();
-            try {
-              await reportToChat(resolved);
-            } catch (error) {
+            // Do not block the Roll button on a host chat acknowledgement.
+            // Some Claude clients process ui/message asynchronously.
+            void reportToChat(resolved).catch((error) => {
               byId("error").textContent = error instanceof Error
                 ? `판정은 완료됐지만 채팅 전달에 실패했습니다: ${error.message}`
                 : "판정은 완료됐지만 채팅 전달에 실패했습니다.";
-            }
+            });
           }
         } catch (error) {
           byId("error").textContent = error instanceof Error ? error.message : "판정 확정에 실패했습니다.";
@@ -158,11 +176,12 @@ DICE_APP_HTML = r"""<!doctype html>
 
       async function connect() {
         try {
-          await request("ui/initialize", {
+          const result = await request("ui/initialize", {
             protocolVersion: "2026-01-26",
             appInfo: { name: "MCP-TRPG Dice", version: "0.1.0" },
             appCapabilities: {},
           });
+          hostCapabilities = result && result.hostCapabilities ? result.hostCapabilities : {};
           send({ method: "ui/notifications/initialized", params: {} });
           initialized = true;
         } catch (error) {

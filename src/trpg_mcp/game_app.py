@@ -59,15 +59,20 @@ GAME_APP_HTML = r"""<!doctype html>
       const parentWindow = window.parent;
       const pending = new Map();
       let nextRequestId = 1;
+      let hostCapabilities = {};
 
       function send(message) {
         parentWindow.postMessage({ jsonrpc: "2.0", ...message }, "*");
       }
 
-      function request(method, params) {
+      function request(method, params, timeoutMs = 5000) {
         const id = nextRequestId++;
         return new Promise((resolve, reject) => {
-          pending.set(id, { resolve, reject });
+          const timer = setTimeout(() => {
+            pending.delete(id);
+            reject(new Error("호스트 응답 시간이 초과됐습니다."));
+          }, timeoutMs);
+          pending.set(id, { resolve, reject, timer });
           send({ id, method, params });
         });
       }
@@ -83,6 +88,7 @@ GAME_APP_HTML = r"""<!doctype html>
         if (message.id !== undefined && pending.has(message.id)) {
           const callback = pending.get(message.id);
           pending.delete(message.id);
+          clearTimeout(callback.timer);
           if (message.error) callback.reject(new Error(message.error.message || "호스트 요청에 실패했습니다."));
           else callback.resolve(message.result);
           return;
@@ -130,10 +136,19 @@ GAME_APP_HTML = r"""<!doctype html>
         button.disabled = true;
         byId("choice-status").textContent = "선택을 채팅에 전달하는 중…";
         try {
-          await request("ui/message", {
-            role: "user",
-            content: [{ type: "text", text: `[MCP-TRPG 선택] ${message}` }],
-          });
+          const content = [{ type: "text", text: `[MCP-TRPG 선택] ${message}` }];
+          if (hostCapabilities.message) {
+            try {
+              await request("ui/message", { role: "user", content });
+            } catch (error) {
+              if (!hostCapabilities.updateModelContext) throw error;
+              await request("ui/update-model-context", { content });
+            }
+          } else if (hostCapabilities.updateModelContext) {
+            await request("ui/update-model-context", { content });
+          } else {
+            throw new Error("이 Claude 호스트는 채팅 메시지 전달을 지원하지 않습니다.");
+          }
           byId("choice-status").textContent = `선택됨: ${label}`;
         } catch (error) {
           button.disabled = false;
@@ -193,11 +208,12 @@ GAME_APP_HTML = r"""<!doctype html>
 
       async function connect() {
         try {
-          await request("ui/initialize", {
+          const result = await request("ui/initialize", {
             protocolVersion: "2026-01-26",
             appInfo: { name: "MCP-TRPG Game", version: "0.1.0" },
             appCapabilities: {},
           });
+          hostCapabilities = result && result.hostCapabilities ? result.hostCapabilities : {};
           send({ method: "ui/notifications/initialized", params: {} });
         } catch (error) {
           byId("campaign-status").textContent = error instanceof Error ? error.message : "MCP App 연결에 실패했습니다.";
