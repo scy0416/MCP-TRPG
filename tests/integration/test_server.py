@@ -146,11 +146,15 @@ async def test_server_lists_and_calls_info_tool() -> None:
         assert "crypto.getRandomValues" in dice.contents[0].text
         assert 'request("tools/call"' in dice.contents[0].text
         assert "ui/initialize" in dice.contents[0].text
+        assert 'request("ui/message"' in dice.contents[0].text
         assert "window.openai" not in dice.contents[0].text
         game = await client.read_resource("ui://trpg/game")
         assert game.contents[0].mime_type == "text/html;profile=mcp-app"
         assert 'id="entities"' in game.contents[0].text
         assert 'id="inventory"' in game.contents[0].text
+        assert 'id="choices"' in game.contents[0].text
+        assert 'request("ui/message"' in game.contents[0].text
+        assert "ui/initialize" in game.contents[0].text
 
 
 def test_campaign_resource_context_is_scoped_and_sanitized() -> None:

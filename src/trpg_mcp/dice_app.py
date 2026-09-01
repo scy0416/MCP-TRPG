@@ -109,6 +109,22 @@ DICE_APP_HTML = r"""<!doctype html>
         return request("tools/call", { name: "resolve_check", arguments: { check_id: check.check_id, rolls } });
       }
 
+      async function reportToChat(resolved) {
+        if (!resolved || typeof resolved !== "object") return;
+        const rolls = Array.isArray(resolved.rolls) ? resolved.rolls.join(", ") : "—";
+        const modifier = Number(resolved.modifier) >= 0 ? `+${resolved.modifier}` : String(resolved.modifier);
+        const outcome = resolved.success ? "성공" : "실패";
+        const text = [
+          "[MCP-TRPG 판정 결과]",
+          `${resolved.label || "능력 판정"}: ${outcome}`,
+          `주사위: ${rolls} · 보정치: ${modifier} · 합계: ${resolved.total} · DC: ${resolved.difficulty}`,
+          `사유: ${resolved.reason || "없음"}`,
+        ].join("\\n");
+        // A tool call made by a View is returned to the View only. Send the
+        // authoritative result to the host so the model can continue in chat.
+        await request("ui/message", { role: "user", content: [{ type: "text", text }] });
+      }
+
       async function roll() {
         if (!check) return;
         const dice = check.dice || { count: 1, sides: 20 };
@@ -122,7 +138,16 @@ DICE_APP_HTML = r"""<!doctype html>
         try {
           const response = await resolve(rolls);
           const resolved = response && (response.structuredContent || response);
-          if (resolved && resolved.outcome) byId("result").textContent = resolved.outcome.toUpperCase();
+          if (resolved && resolved.outcome) {
+            byId("result").textContent = resolved.outcome.toUpperCase();
+            try {
+              await reportToChat(resolved);
+            } catch (error) {
+              byId("error").textContent = error instanceof Error
+                ? `판정은 완료됐지만 채팅 전달에 실패했습니다: ${error.message}`
+                : "판정은 완료됐지만 채팅 전달에 실패했습니다.";
+            }
+          }
         } catch (error) {
           byId("error").textContent = error instanceof Error ? error.message : "판정 확정에 실패했습니다.";
           byId("roll").disabled = false;
