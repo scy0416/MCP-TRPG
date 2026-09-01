@@ -21,6 +21,15 @@ def test_validate_stats_accepts_the_mvp_assignment() -> None:
     }
 
 
+def test_validate_stats_accepts_full_ability_names() -> None:
+    assert _validate_stats({"strength": 3, "dexterity": 2, "intelligence": 1, "charisma": 0}) == {
+        "str": 3,
+        "dex": 2,
+        "int": 1,
+        "cha": 0,
+    }
+
+
 @pytest.mark.parametrize(
     "stats",
     [

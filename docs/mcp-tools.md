@@ -12,8 +12,9 @@
 ## `create_character`
 
 `campaign_id`, `name`, `stats`를 받아 캐릭터를 만든다. `stats`는 `str`, `dex`,
-`int`, `cha` 키를 사용하고 값은 MVP 규칙에 따른 `0`, `1`, `2`, `3`의 순열이어야
-한다. 서버가 캐릭터의 초기 HP와 생성 이벤트를 계산·기록한다.
+`int`, `cha` 키 또는 각 능력치의 전체 이름(`strength`, `dexterity`,
+`intelligence`, `charisma`)을 사용할 수 있다. 값은 MVP 규칙에 따른 `0`, `1`, `2`,
+`3`의 순열이어야 한다. 서버가 캐릭터의 초기 HP와 생성 이벤트를 계산·기록한다.
 
 ## `get_game`
 

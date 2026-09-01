@@ -143,14 +143,27 @@ def _validate_text(value: str, name: str, max_length: int) -> None:
 
 
 def _validate_stats(stats: Mapping[str, object]) -> dict[str, int]:
-    if set(stats) != set(ABILITIES):
+    if not isinstance(stats, Mapping):
+        raise ValueError("stats must be an object")
+
+    normalized: dict[str, object] = {}
+    for key, value in stats.items():
+        if not isinstance(key, str):
+            raise ValueError("stats keys must be str, dex, int, cha or their full names")
+        canonical = ABILITY_ALIASES.get(key.strip().lower())
+        if canonical is None or canonical in normalized:
+            raise ValueError("stats must contain exactly str, dex, int and cha")
+        normalized[canonical] = value
+
+    if set(normalized) != set(ABILITIES):
         raise ValueError("stats must contain exactly str, dex, int and cha")
-    values = [stats[ability] for ability in ABILITIES]
+
+    values = [normalized[ability] for ability in ABILITIES]
     if any(isinstance(value, bool) or not isinstance(value, int) for value in values):
         raise ValueError("ability modifiers must be integers")
     if sorted(values) != [0, 1, 2, 3]:
         raise ValueError("ability modifiers must be exactly 0, 1, 2 and 3")
-    return {ability: int(stats[ability]) for ability in ABILITIES}
+    return {ability: int(normalized[ability]) for ability in ABILITIES}
 
 
 def _validate_ability(value: str) -> str:
