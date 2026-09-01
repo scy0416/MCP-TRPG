@@ -144,7 +144,9 @@ async def test_server_lists_and_calls_info_tool() -> None:
         dice = await client.read_resource("ui://trpg/dice")
         assert dice.contents[0].mime_type == "text/html;profile=mcp-app"
         assert "crypto.getRandomValues" in dice.contents[0].text
-        assert 'callTool("resolve_check"' in dice.contents[0].text
+        assert 'request("tools/call"' in dice.contents[0].text
+        assert "ui/initialize" in dice.contents[0].text
+        assert "window.openai" not in dice.contents[0].text
         game = await client.read_resource("ui://trpg/game")
         assert game.contents[0].mime_type == "text/html;profile=mcp-app"
         assert 'id="entities"' in game.contents[0].text

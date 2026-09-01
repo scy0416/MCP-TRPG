@@ -40,15 +40,49 @@ DICE_APP_HTML = r"""<!doctype html>
   </main>
   <script>
     (() => {
-      const host = window.openai;
       let check = null;
       const byId = (id) => document.getElementById(id);
 
-      function outputFromHost() {
-        const output = host && host.toolOutput;
+      // MCP Apps views communicate with the host over JSON-RPC postMessage.
+      // The legacy host bridge is not available in Claude's MCP Apps sandbox.
+      const parentWindow = window.parent;
+      const pending = new Map();
+      let nextRequestId = 1;
+      let initialized = false;
+
+      function send(message) {
+        parentWindow.postMessage({ jsonrpc: "2.0", ...message }, "*");
+      }
+
+      function request(method, params) {
+        const id = nextRequestId++;
+        return new Promise((resolve, reject) => {
+          pending.set(id, { resolve, reject });
+          send({ id, method, params });
+        });
+      }
+
+      function outputFromHost(output) {
         if (!output || typeof output !== "object") return null;
         return output.structuredContent || output;
       }
+
+      function handleMessage(event) {
+        if (event.source !== parentWindow || !event.data || event.data.jsonrpc !== "2.0") return;
+        const message = event.data;
+        if (message.id !== undefined && pending.has(message.id)) {
+          const callback = pending.get(message.id);
+          pending.delete(message.id);
+          if (message.error) callback.reject(new Error(message.error.message || "호스트 요청에 실패했습니다."));
+          else callback.resolve(message.result);
+          return;
+        }
+        if (message.method === "ui/notifications/tool-result") {
+          setCheck(outputFromHost(message.params));
+        }
+      }
+
+      window.addEventListener("message", handleMessage);
 
       function setCheck(value) {
         if (!value || typeof value !== "object") return;
@@ -70,11 +104,9 @@ DICE_APP_HTML = r"""<!doctype html>
       }
 
       async function resolve(rolls) {
-        if (!host || typeof host.callTool !== "function") {
-          throw new Error("이 호스트는 MCP Tool 호출을 지원하지 않습니다.");
-        }
         // Only the check id and raw rolls cross the UI/server boundary.
-        return host.callTool("resolve_check", { check_id: check.check_id, rolls });
+        if (!initialized) throw new Error("MCP App 연결이 아직 완료되지 않았습니다.");
+        return request("tools/call", { name: "resolve_check", arguments: { check_id: check.check_id, rolls } });
       }
 
       async function roll() {
@@ -98,10 +130,22 @@ DICE_APP_HTML = r"""<!doctype html>
       }
 
       byId("roll").addEventListener("click", roll);
-      setCheck(outputFromHost());
-      window.addEventListener("message", (event) => {
-        if (event.data && event.data.type === "mcp-app-tool-output") setCheck(event.data.output);
-      });
+
+      async function connect() {
+        try {
+          await request("ui/initialize", {
+            protocolVersion: "2026-01-26",
+            appInfo: { name: "MCP-TRPG Dice", version: "0.1.0" },
+            appCapabilities: {},
+          });
+          send({ method: "ui/notifications/initialized", params: {} });
+          initialized = true;
+        } catch (error) {
+          byId("error").textContent = error instanceof Error ? error.message : "MCP App 연결에 실패했습니다.";
+        }
+      }
+
+      connect();
     })();
   </script>
 </body>
