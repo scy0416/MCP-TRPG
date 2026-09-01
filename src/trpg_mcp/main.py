@@ -93,4 +93,4 @@ def create_mcp_server(
 
 
 mcp = create_mcp_server(settings)
-app = mcp.streamable_http_app()
+app = mcp.streamable_http_app(host=settings.host)
