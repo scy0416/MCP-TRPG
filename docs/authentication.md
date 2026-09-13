@@ -9,7 +9,7 @@ Stage 5는 Supabase Auth를 OAuth 2.1 authorization server로 사용하고 MCP-T
 1. MCP client가 `/.well-known/oauth-protected-resource/mcp`를 조회한다.
 2. 문서에 표시된 Supabase issuer에서 OAuth metadata를 조회한다.
 3. client가 동적 등록 후 authorization code + PKCE 흐름을 시작한다.
-4. 사용자가 `/oauth/consent`에서 로그인하고 요청을 허용하거나 거부한다.
+4. 사용자가 `/oauth/consent`에서 기존 계정으로 로그인하거나 새 계정을 만든 뒤 요청을 허용하거나 거부한다.
 5. Supabase가 MCP resource URI를 `aud`로 갖는 access token을 발급한다.
 6. MCP 서버가 JWKS 서명, issuer, audience, 만료, 사용자와 OAuth client claims를 모두
    검증한 뒤 요청을 처리한다.
@@ -73,6 +73,10 @@ uv run uvicorn trpg_mcp.main:app --host 127.0.0.1 --port 8000
 Protected Resource Metadata는 해당 issuer를 광고한다.
 
 ## Hosted Supabase 설정
+
+동의 화면에는 이메일·비밀번호 로그인과 회원가입이 함께 제공된다. Supabase Auth의 이메일
+확인이 활성화된 환경에서는 가입 직후 세션이 발급되지 않으므로 확인 메일을 처리한 뒤 같은
+화면에서 다시 로그인해야 한다.
 
 development와 production project 각각에 다음을 별도로 적용한다.
 

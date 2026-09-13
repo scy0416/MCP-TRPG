@@ -48,9 +48,9 @@ variable "mcp_resource_url" {
 }
 
 variable "min_instance_count" {
-  description = "Warm Cloud Run instances for initial production latency."
+  description = "Minimum Cloud Run instances; zero allows scale-to-zero when idle."
   type        = number
-  default     = 1
+  default     = 0
 }
 
 variable "max_instance_count" {

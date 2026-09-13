@@ -391,5 +391,7 @@ def test_consent_page_uses_public_configuration_safely() -> None:
     assert response.status_code == 200
     assert "MCP-TRPG 연결 승인" in response.text
     assert "test-publishable-key" not in response.text
+    assert "supabase.auth.signUp" in response.text
+    assert "회원가입" in response.text
     assert "Content-Security-Policy" in response.headers
     assert response.headers["cache-control"] == "no-store"

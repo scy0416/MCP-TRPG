@@ -96,10 +96,10 @@ Invoke-RestMethod http://127.0.0.1:8080/health
 | MCP endpoint | https://trpg-mcp-x7434ynfta-du.a.run.app/mcp |
 | Health endpoint | https://trpg-mcp-x7434ynfta-du.a.run.app/health |
 | Artifact Registry | `asia-northeast3-docker.pkg.dev/trpg-mcp-507214/trpg-mcp/server` |
-| 최근 배포 태그 | `stage19` |
-| 최근 revision | `trpg-mcp-00007-bc7` |
+| 최근 배포 태그 | `signup-20260912` |
+| 최근 revision | `trpg-mcp-00009-457` |
 
-배포 후 health endpoint가 `{"status":"ok","service":"MCP-TRPG","version":"0.1.0"}`를 반환하는지 확인한다.
+현재 서비스는 유휴 시 0개까지 scale-to-zero하도록 설정되어 있다. 배포 후 health endpoint가 `{"status":"ok","service":"MCP-TRPG","version":"0.1.0"}`를 반환하는지 확인한다.
 
 ```powershell
 gcloud auth login

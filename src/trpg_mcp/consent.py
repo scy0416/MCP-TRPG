@@ -91,12 +91,21 @@ _CONSENT_HTML = f"""<!doctype html>
     <p id="error" class="error" role="alert"></p>
 
     <form id="login" hidden>
-      <p>승인하려면 먼저 Supabase 계정으로 로그인하세요.</p>
+      <p id="auth-mode-description">승인하려면 먼저 Supabase 계정으로 로그인하세요.</p>
+      <label id="display-name-field" hidden>표시 이름
+        <input id="display-name" type="text" autocomplete="name" maxlength="80">
+      </label>
       <label>이메일 <input id="email" type="email" autocomplete="email" required></label>
       <label>비밀번호
         <input id="password" type="password" autocomplete="current-password" required>
       </label>
-      <button class="approve" type="submit">로그인</button>
+      <label id="password-confirm-field" hidden>비밀번호 확인
+        <input id="password-confirm" type="password" autocomplete="new-password" minlength="8">
+      </label>
+      <div class="actions">
+        <button id="submit-auth" class="approve" type="submit">로그인</button>
+        <button id="switch-auth" class="deny" type="button">회원가입</button>
+      </div>
     </form>
 
     <section id="consent" hidden>
@@ -126,11 +135,38 @@ _CONSENT_HTML = f"""<!doctype html>
     const status = document.querySelector("#status");
     const errorBox = document.querySelector("#error");
     const loginForm = document.querySelector("#login");
+    const authModeDescription = document.querySelector("#auth-mode-description");
+    const displayNameField = document.querySelector("#display-name-field");
+    const displayName = document.querySelector("#display-name");
+    const passwordConfirmField = document.querySelector("#password-confirm-field");
+    const passwordConfirm = document.querySelector("#password-confirm");
+    const submitAuth = document.querySelector("#submit-auth");
+    const switchAuth = document.querySelector("#switch-auth");
     const consent = document.querySelector("#consent");
+    let authMode = "login";
 
     function fail(message) {{
       status.hidden = true;
       errorBox.textContent = message;
+    }}
+
+    function setAuthMode(mode) {{
+      authMode = mode;
+      const isSignup = mode === "signup";
+      authModeDescription.textContent = isSignup
+        ? "새 Supabase 계정을 만든 뒤 연결을 승인하세요."
+        : "승인하려면 먼저 Supabase 계정으로 로그인하세요.";
+      displayNameField.hidden = !isSignup;
+      displayName.required = false;
+      passwordConfirmField.hidden = !isSignup;
+      passwordConfirm.required = isSignup;
+      document.querySelector("#password").minLength = isSignup ? 8 : 0;
+      submitAuth.textContent = isSignup ? "회원가입" : "로그인";
+      switchAuth.textContent = isSignup ? "로그인으로 돌아가기" : "회원가입";
+      document.querySelector("#password").autocomplete = isSignup
+        ? "new-password"
+        : "current-password";
+      errorBox.textContent = "";
     }}
 
     async function loadConsent() {{
@@ -168,6 +204,32 @@ _CONSENT_HTML = f"""<!doctype html>
       event.preventDefault();
       const email = document.querySelector("#email").value;
       const password = document.querySelector("#password").value;
+      if (authMode === "signup") {{
+        if (password !== passwordConfirm.value) {{
+          fail("비밀번호가 일치하지 않습니다.");
+          return;
+        }}
+        const {{ data, error }} = await supabase.auth.signUp({{
+          email,
+          password,
+          options: {{ data: {{ display_name: displayName.value.trim() }} }}
+        }});
+        if (error) {{
+          fail(error.message);
+          loginForm.hidden = false;
+          return;
+        }}
+        if (!data.session) {{
+          status.hidden = false;
+          status.textContent = "가입이 완료되었습니다. 이메일 인증을 마친 뒤 로그인하세요.";
+          errorBox.textContent = "";
+          setAuthMode("login");
+          return;
+        }}
+        await loadConsent();
+        return;
+      }}
+
       const {{ error }} = await supabase.auth.signInWithPassword({{ email, password }});
       if (error) {{
         fail(error.message);
@@ -176,6 +238,10 @@ _CONSENT_HTML = f"""<!doctype html>
       }}
       await loadConsent();
     }});
+
+    switchAuth.addEventListener(
+      "click", () => setAuthMode(authMode === "login" ? "signup" : "login")
+    );
 
     async function decide(decision) {{
       document.querySelector("#approve").disabled = true;
